@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import statistics
 from pathlib import Path
 
 
@@ -21,6 +20,7 @@ def main() -> int:
             e2e.append(float(rec.get("e2e_ms") or 0))
             for h in rec.get("hops") or []:
                 by_hop.setdefault(h["name"], []).append(float(h["ms"]))
+
     def pct(xs, p):
         if not xs:
             return None
@@ -31,6 +31,7 @@ def main() -> int:
         if f == c:
             return xs[f]
         return xs[f] + (xs[c] - xs[f]) * (k - f)
+
     print(f"sessions: {len(e2e)}")
     print(f"{'metric':<28} {'n':>4} {'p50':>8} {'p95':>8}")
     print(f"{'-'*28} {'-'*4} {'-'*8} {'-'*8}")
