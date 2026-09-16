@@ -16,7 +16,9 @@ Dry-run uses fake adapters (no keys). Live **never** silently falls back to fake
 
 ## Status
 
-**v0.2** — hire-signal live path: Deepgram → LLM → ElevenLabs, real `--audio` file, hop timers, stop rules, session JSONL + rollup.
+**v0.2** — hire-signal live path: Deepgram → LLM → ElevenLabs, real `--audio`, hop timers, stop rules, session JSONL + rollup.
+
+**v0.2.1** — `TurnTakingController` (endpointing + barge-in state machine) with offline tests — the hard duplex part, no keys required.
 
 ## Verify
 
@@ -26,10 +28,16 @@ python3 -m src.main --dry-run --audio fixtures/hello.wav
 python3 -m src.main --dry-run --fail-at tts
 python3 -m src.main --dry-run --write-session
 
+# regenerate synthetic smoke audio if needed
+./scripts/make_fixture.sh
+
 # live (requires .env — see .env.example)
 cp .env.example .env   # then fill DEEPGRAM_API_KEY, ELEVENLABS_API_KEY, LLM_API_KEY
 python3 -m src.main --live --audio fixtures/hello.wav --write-session
 python3 -m src.rollup
+
+# turn-taking / barge-in (no keys)
+python3 tests/test_turn_taking.py
 ```
 
 Expect a hop latency table. Failures print `stop_reason` and exit cleanly. **Do not invent numbers** in `metrics.md` — fill from `metrics/sessions/` only. Label whether audio was `fixtures/hello.wav` (synthetic) or your own mic capture.
@@ -44,7 +52,9 @@ Expect a hop latency table. Failures print `stop_reason` and exit cleanly. **Do 
 
 ```
 src/adapters/   # fake + deepgram + elevenlabs + llm
-fixtures/       # hello.wav (espeak synthetic smoke audio)
+src/turn_taking.py  # endpointing + barge-in state machine
+tests/          # offline policy tests
+fixtures/       # hello.wav via scripts/make_fixture.sh
 metrics/        # session JSONL (gitignored)
 metrics.md      # human rollup — empty until measured
 docs/           # architecture

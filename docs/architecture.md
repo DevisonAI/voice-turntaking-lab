@@ -17,3 +17,11 @@
 2. Live mode never falls back to fake adapters.
 3. Live STT requires a real audio file (`--audio`). No silence WAV shortcut.
 4. `fixtures/hello.wav` is synthetic (espeak) for smoke tests; portfolio latency claims should prefer your own capture and say so in `metrics.md`.
+
+## Turn-taking (v0.2.1)
+
+`src/turn_taking.py` owns duplex policy as an explicit state machine:
+
+`idle → user_speaking → endpointing → agent_speaking ⇄ barge_in → stopped`
+
+It does **not** call providers. The loop asks `should_start_agent()` / `should_cancel_agent()` after VAD events. Wire real VAD next; until then, tests prove the policy.
