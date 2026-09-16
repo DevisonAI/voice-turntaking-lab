@@ -6,18 +6,24 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .adapters.fake import FakeAgent, FakeSTT, FakeTTS
+from .adapters.live import EnvAgent, EnvSTT, EnvTTS, MissingKeyError
 from .timing import HopTimer, SessionMetrics
 from .turn_controller import TurnPolicy
 
 
-def run_session(fail_at: str | None = None) -> SessionMetrics:
+def run_session(fail_at: str | None = None, live: bool = False) -> SessionMetrics:
     metrics = SessionMetrics()
     policy = TurnPolicy(max_hop_failures=1)
     failures = 0
 
-    stt = FakeSTT(fail=(fail_at == "stt"))
-    agent = FakeAgent(fail=(fail_at == "llm"))
-    tts = FakeTTS(fail=(fail_at == "tts"))
+    if live:
+        stt = EnvSTT()
+        agent = EnvAgent()
+        tts = EnvTTS()
+    else:
+        stt = FakeSTT(fail=(fail_at == "stt"))
+        agent = FakeAgent(fail=(fail_at == "llm"))
+        tts = FakeTTS(fail=(fail_at == "tts"))
 
     # Hop 1: STT
     hop = HopTimer("end_utt→stt_final")
@@ -105,13 +111,29 @@ def main() -> int:
         action="store_true",
         help="Write metrics/sessions/*.jsonl",
     )
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Use live adapters (requires .env keys). Fails loudly if missing.",
+    )
     args = parser.parse_args()
 
-    if not args.dry_run:
-        print("Use --dry-run for the no-key lab loop. Live adapters: coming next.")
+    if not args.dry_run and not args.live:
+        print("Use --dry-run (no keys) or --live (requires STT_API_KEY / LLM_API_KEY / TTS_API_KEY).")
         return 2
 
-    metrics = run_session(fail_at=args.fail_at)
+    if args.live and args.fail_at:
+        print("--fail-at only applies to --dry-run")
+        return 2
+
+    try:
+        metrics = run_session(fail_at=args.fail_at, live=args.live)
+    except MissingKeyError as e:
+        print(f"stop_reason: {e}")
+        return 3
+    except NotImplementedError as e:
+        print(f"stop_reason: {e}")
+        return 4
     print(metrics.table())
     if args.write_session:
         root = Path(__file__).resolve().parents[1]
