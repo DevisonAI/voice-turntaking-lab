@@ -1,57 +1,57 @@
 # voice-turntaking-lab
 
-Realtime voice turn-taking lab for a **remote Voice-AI / agents** portfolio.
+Realtime voice turn-taking lab for a **remote Voice-AI / agents** portfolio aimed at **ElevenLabs-class** employers.
 
-**Goal:** Measure and harden a duplex loop — mic → STT → agent/LLM → TTS → speaker — with explicit latency budgets and failure degrade (not a demo that only works on the happy path).
+**Goal:** Measure and harden a duplex loop — audio → STT → agent/LLM → TTS — with explicit latency budgets and failure degrade (not a demo that only works on the happy path).
+
+## Stack (intentional)
+
+| Hop | Default live provider | Why |
+| --- | --- | --- |
+| STT | **Deepgram** | Industry voice STT; not bundled into a single LLM vendor |
+| LLM | Swappable (`openai` / `anthropic`) | Commodity middle hop — not the hire differentiator |
+| TTS | **ElevenLabs** | Matches target employer class |
+
+Dry-run uses fake adapters (no keys). Live **never** silently falls back to fakes.
 
 ## Status
 
-**v0.1 dry-run:** fake STT / LLM / TTS adapters + hop timers + stop rules. No API keys required.
+**v0.2** — hire-signal live path: Deepgram → LLM → ElevenLabs, real `--audio` file, hop timers, stop rules, session JSONL + rollup.
 
-**v0.1.1 live stubs:** `--live` requires env keys and fails loudly if missing (no fake success).
-
-## Verify (done metric)
+## Verify
 
 ```bash
-python3 -m src.main --dry-run
+# no keys
+python3 -m src.main --dry-run --audio fixtures/hello.wav
 python3 -m src.main --dry-run --fail-at tts
 python3 -m src.main --dry-run --write-session
-python3 -m src.main --live   # requires .env keys; fails loudly if missing
+
+# regenerate synthetic smoke audio if needed
+./scripts/make_fixture.sh
+
+# live (requires .env — see .env.example)
+cp .env.example .env   # then fill DEEPGRAM_API_KEY, ELEVENLABS_API_KEY, LLM_API_KEY
+python3 -m src.main --live --audio fixtures/hello.wav --write-session
+python3 -m src.rollup
 ```
 
-Expect a hop latency table. Injected failures print `stop_reason` and exit cleanly.
-
-## Target loop
-
-```
-mic → STT (streaming) → agent (LLM + tools) → TTS (streaming) → speaker
-         ↑____ VAD / endpointing / barge-in ____↑
-```
-
-## Latency budget
-
-See `metrics.md` — fill from session JSONL only. Do not invent numbers.
+Expect a hop latency table. Failures print `stop_reason` and exit cleanly. **Do not invent numbers** in `metrics.md` — fill from `metrics/sessions/` only. Label whether audio was `fixtures/hello.wav` (synthetic) or your own mic capture.
 
 ## Failure modes
 
-- STT timeout / hang (`--fail-at stt`)
-- LLM timeout (`--fail-at llm`)
-- TTS failure (`--fail-at tts`)
-- Explicit **stop rule** via `TurnPolicy` — no silent best judgment
-- Missing live keys → loud `stop_reason` (not a quiet fake path)
+- Missing keys → loud `stop_reason` (no fake success)
+- STT / LLM / TTS errors → `TurnPolicy` stop
+- `--fail-at stt|llm|tts` on dry-run to demo stop rules
 
 ## Layout
 
 ```
-src/          # loop + timing + fake/live adapters
-metrics/      # session JSONL
-metrics.md    # human rollup (empty until measured)
-docs/         # architecture notes
+src/adapters/   # fake + deepgram + elevenlabs + llm
+fixtures/       # hello.wav via scripts/make_fixture.sh
+metrics/        # session JSONL (gitignored)
+metrics.md      # human rollup — empty until measured
+docs/           # architecture
 ```
-
-## Live adapters
-
-Live stubs: `--live` requires `STT_API_KEY` / `LLM_API_KEY` / `TTS_API_KEY` (see `.env.example`). Missing keys → loud `stop_reason`, not a fake success. Real provider calls: next.
 
 ## Author
 
