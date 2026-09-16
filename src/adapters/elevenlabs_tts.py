@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 
@@ -25,6 +24,8 @@ class ElevenLabsTTS:
         if not (text or "").strip():
             raise ProviderHTTPError("TTS refused empty text")
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{self.voice_id}"
+        import json
+
         raw = http_request(
             "POST",
             url,

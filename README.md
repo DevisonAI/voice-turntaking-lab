@@ -26,9 +26,6 @@ python3 -m src.main --dry-run --audio fixtures/hello.wav
 python3 -m src.main --dry-run --fail-at tts
 python3 -m src.main --dry-run --write-session
 
-# regenerate synthetic smoke audio if needed
-./scripts/make_fixture.sh
-
 # live (requires .env — see .env.example)
 cp .env.example .env   # then fill DEEPGRAM_API_KEY, ELEVENLABS_API_KEY, LLM_API_KEY
 python3 -m src.main --live --audio fixtures/hello.wav --write-session
@@ -47,7 +44,7 @@ Expect a hop latency table. Failures print `stop_reason` and exit cleanly. **Do 
 
 ```
 src/adapters/   # fake + deepgram + elevenlabs + llm
-fixtures/       # hello.wav via scripts/make_fixture.sh
+fixtures/       # hello.wav (espeak synthetic smoke audio)
 metrics/        # session JSONL (gitignored)
 metrics.md      # human rollup — empty until measured
 docs/           # architecture

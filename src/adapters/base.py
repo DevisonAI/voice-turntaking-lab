@@ -4,7 +4,7 @@ from typing import Protocol
 
 
 class STT(Protocol):
-    def transcribe(self, audio_label: str = "utterance") -> str: ...
+    def transcribe_file(self, path: str) -> str: ...
 
 
 class Agent(Protocol):
