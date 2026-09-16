@@ -1,0 +1,9 @@
+[project]
+name = "voice-turntaking-lab"
+version = "0.1.0"
+description = "Realtime voice turn-taking lab with hop timing"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+voice-lab = "src.main:main"

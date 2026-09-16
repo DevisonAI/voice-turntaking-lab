@@ -4,13 +4,19 @@ Realtime voice turn-taking lab for a **remote Voice-AI / agents** portfolio.
 
 **Goal:** Measure and harden a duplex loop — mic → STT → agent/LLM → TTS → speaker — with explicit latency budgets and failure degrade (not a demo that only works on the happy path).
 
-## Why this exists
-
-Voice-AI hiring screens for production instincts: end-of-utterance → first audio latency, barge-in / turn-taking, and explainable failures. This repo is the practice ground and the proof.
-
 ## Status
 
-Scaffold. First runnable loop and `metrics.md` from real sessions come next.
+**v0.1 dry-run:** fake STT / LLM / TTS adapters + hop timers + stop rules. No API keys required.
+
+## Verify (done metric)
+
+```bash
+python3 -m src.main --dry-run
+python3 -m src.main --dry-run --fail-at tts
+python3 -m src.main --dry-run --write-session
+```
+
+Expect a hop latency table. Injected failures print `stop_reason` and exit cleanly.
 
 ## Target loop
 
@@ -19,41 +25,29 @@ mic → STT (streaming) → agent (LLM + tools) → TTS (streaming) → speaker
          ↑____ VAD / endpointing / barge-in ____↑
 ```
 
-## Latency budget (fill with measured numbers)
+## Latency budget
 
-| Hop | Budget (ms) | Measured p50 | Measured p95 |
-| --- | --- | --- | --- |
-| End of utterance → STT final | TBD | — | — |
-| STT → LLM first token | TBD | — | — |
-| LLM → TTS first audio | TBD | — | — |
-| **E2E end-of-utterance → first audio** | TBD | — | — |
+See `metrics.md` — fill from session JSONL only. Do not invent numbers.
 
-## Failure modes (must demonstrate)
+## Failure modes
 
-- STT timeout / hang
-- LLM timeout
-- TTS failure
-- Clear **stop rule** (human or automatic) — no silent “best judgment”
-
-## Stack (v0 intent)
-
-- Python 3.11+
-- One STT provider + one TTS provider (swappable)
-- Optional: LiveKit / WebRTC path after local loop works
-- No claim of training speech models
+- STT timeout / hang (`--fail-at stt`)
+- LLM timeout (`--fail-at llm`)
+- TTS failure (`--fail-at tts`)
+- Explicit **stop rule** via `TurnPolicy` — no silent best judgment
 
 ## Layout
 
 ```
-src/          # loop + timing
-metrics/      # session exports → metrics.md
-evals/        # later (Flagship 2)
+src/          # loop + timing + fake adapters
+metrics/      # session JSONL
+metrics.md    # human rollup (empty until measured)
 docs/         # architecture notes
 ```
 
-## Run
+## Live adapters
 
-Coming with first skeleton (`pip install` + `.env.example`).
+Coming next: real STT/TTS/LLM behind the same interfaces (`.env.example`).
 
 ## Author
 
