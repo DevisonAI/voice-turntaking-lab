@@ -79,8 +79,20 @@ class AnthropicChatAgent:
             raise ProviderHTTPError(f"unexpected Anthropic response: {data!r}") from e
 
 
+def _resolve_llm_key() -> str:
+    return (
+        os.environ.get("LLM_API_KEY", "").strip()
+        or os.environ.get("ANTHROPIC_API_KEY", "").strip()
+        or os.environ.get("OPENAI_API_KEY", "").strip()
+    )
+
+
 def build_llm():
     provider = os.environ.get("LLM_PROVIDER", "anthropic").strip().lower()
+    key = _resolve_llm_key()
+    # Never send an Anthropic key to OpenAI (common .env mix-up).
+    if key.startswith("sk-ant-"):
+        provider = "anthropic"
     if provider in ("openai", "openai_compatible"):
         return OpenAIChatAgent()
     if provider in ("anthropic", "claude"):
