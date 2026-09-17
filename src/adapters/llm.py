@@ -80,7 +80,7 @@ class AnthropicChatAgent:
 
 
 def build_llm():
-    provider = os.environ.get("LLM_PROVIDER", "openai").strip().lower()
+    provider = os.environ.get("LLM_PROVIDER", "anthropic").strip().lower()
     if provider in ("openai", "openai_compatible"):
         return OpenAIChatAgent()
     if provider in ("anthropic", "claude"):
